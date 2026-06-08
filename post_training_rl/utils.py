@@ -4,4 +4,10 @@ def compute_sequence_logps(logits, labels, loss_mask):
     (caller owns the causal shift); labels (B,T); loss_mask (B,T) with
     1.0 for response tokens, 0.0 for prompt/padding.
     Returns: (seq_logp_sum (B,), seq_len (B,))."""
-    raise NotImplementedError("Implement sequence log-prob aggregation by hand.")
+    # Exercise 1:
+    # 1. Validate shapes.
+    # 2. Convert logits to log-probs with log_softmax.
+    # 3. Gather the log-prob assigned to each label token.
+    # 4. Apply loss_mask so prompt/padding tokens do not count.
+    # 5. Return summed response log-probs and response token counts.
+    raise NotImplementedError("Exercise 1: implement response sequence log-probs.")

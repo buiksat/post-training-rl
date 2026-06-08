@@ -1,2 +1,6 @@
+accelerate
+numpy
+safetensors
 torch
+transformers
 pytest
