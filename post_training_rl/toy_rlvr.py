@@ -135,10 +135,14 @@ def sequence_logps_for_completions(model, tokenizer, prompt_ids, completion_ids,
 def sft_loss(model, tokenizer, pairs, device):
     # Exercise 2:
     # 1. Build the supervised batch with make_sft_batch.
+    input_ids, labels, loss_mask = make_sft_batch(tokenizer, pairs, device)
     # 2. Run the model to get logits.
+    logits, _ = model(input_ids)
     # 3. Use compute_sequence_logps over answer tokens only.
-    # 4. Return mean negative per-token log-prob.
-    raise NotImplementedError("Exercise 2: implement SFT loss.")
+    seq_logp_sum, seq_len = compute_sequence_logps(logits, labels, loss_mask)
+    # 4. Return mean negative per-token log-prob.    
+    return (- (seq_logp_sum / seq_len)).mean()
+    
 
 
 def generate_completion(model, tokenizer, prompt_ids, max_new_tokens, temperature, device):
