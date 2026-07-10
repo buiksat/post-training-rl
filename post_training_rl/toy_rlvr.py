@@ -141,7 +141,7 @@ def sft_loss(model, tokenizer, pairs, device):
     # 3. Use compute_sequence_logps over answer tokens only.
     seq_logp_sum, seq_len = compute_sequence_logps(logits, labels, loss_mask)
     # 4. Return mean negative per-token log-prob.    
-    return (- (seq_logp_sum / seq_len)).mean()
+    return (- (seq_logp_sum / seq_len.clamp(min=1))).mean()
     
 
 
