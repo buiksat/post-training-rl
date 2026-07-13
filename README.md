@@ -24,19 +24,19 @@ You will build the main post-training moving parts:
 ## Roadmap
 
 - [x] Hugging Face model probe
-- [ ] Hugging Face completion log-probs
-- [ ] response sequence log-probs
-- [ ] SFT loss
-- [ ] autoregressive generation
-- [ ] verifier reward
-- [ ] PPO clipped loss + diagnostics
-- [ ] rollout collection with KL-penalized rewards
-- [ ] DPO loss (+ optional NLL)
-- [ ] pass@K and bootstrap CIs
-- [ ] GRPO grouped advantages
-- [ ] reward-model pairwise loss
-- [ ] reward-hacking and KL-drift diagnostics
-- [ ] failure-analysis examples
+- [x] Hugging Face completion log-probs
+- [x] response sequence log-probs
+- [x] SFT loss
+- [x] autoregressive generation
+- [x] verifier reward
+- [x] PPO clipped loss + diagnostics
+- [x] rollout collection with KL-penalized rewards
+- [x] DPO loss (+ optional NLL)
+- [x] pass@K and bootstrap CIs
+- [x] GRPO grouped advantages
+- [x] reward-model pairwise loss
+- [x] reward-hacking and KL-drift diagnostics
+- [x] failure-analysis examples
 
 ## Setup
 
@@ -47,8 +47,9 @@ pip install -r requirements.txt
 PYTHONPATH=. python -m pytest tests/ -q
 ```
 
-Unimplemented exercises are expected to show as skipped tests. As you implement
-each function, its skipped tests become real checks.
+The exercise implementations and tests are now complete. Use the tests as
+contracts: when extending an exercise, add an edge-case test before changing
+its behavior.
 
 ## Exercise Order
 
@@ -272,6 +273,10 @@ The script prints JSON lines:
 - `post_sft_eval`: accuracy before RL
 - `rl`: PPO diagnostics plus rollout reward and sample KL
 - `final_eval`: post-RL accuracy and pass@K
+
+For the interview framing, see `INTERVIEW_NOTES.md`. It contains the key
+equations, metric interpretations, failure modes, and timed prompts to practice
+after implementing each exercise.
 
 For hands-on experiments, vary:
 

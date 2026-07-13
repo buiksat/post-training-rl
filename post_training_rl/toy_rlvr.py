@@ -152,7 +152,30 @@ def generate_completion(model, tokenizer, prompt_ids, max_new_tokens, temperatur
     # 3. Feed each sampled token back into the model.
     # 4. Stop on eos_token_id or max_new_tokens.
     # 5. Return only completion token ids, not prompt token ids.
-    raise NotImplementedError("Exercise 3: implement autoregressive generation.")
+    if max_new_tokens <= 0:
+        raise ValueError("max_new_tokens must be positive")
+    model_was_training = model.training
+    model.eval()
+    generated = []
+    with torch.no_grad():
+        prompt = torch.tensor([prompt_ids], dtype=torch.long, device=device)
+        logits, hidden = model(prompt)
+        for _ in range(max_new_tokens):
+            next_logits = logits[:, -1, :]
+            if temperature and temperature > 0:
+                next_token = torch.multinomial(
+                    torch.softmax(next_logits / temperature, dim=-1), num_samples=1
+                )
+            else:
+                next_token = next_logits.argmax(dim=-1, keepdim=True)
+            token_id = int(next_token.item())
+            generated.append(token_id)
+            if token_id == tokenizer.eos_token_id:
+                break
+            logits, hidden = model(next_token, hidden)
+    if model_was_training:
+        model.train()
+    return generated
 
 
 def arithmetic_reward(answer_text, target):
@@ -162,7 +185,15 @@ def arithmetic_reward(answer_text, target):
     # - exact string match with target: 1.0
     # - numeric but wrong: small/partial reward or penalty
     # - non-numeric: negative reward
-    raise NotImplementedError("Exercise 4: implement verifier reward.")
+    answer_text = answer_text.strip()
+    target_text = str(target)
+    if answer_text == target_text:
+        return 1.0
+    try:
+        numeric = int(answer_text)
+    except (TypeError, ValueError):
+        return -1.0
+    return 0.1 if numeric != int(target) else 1.0
 
 
 def is_correct_answer(answer_text, target):
@@ -235,7 +266,52 @@ def collect_rollouts(model, reference_model, tokenizer, pairs, config, device):
     # 4. Compute KL-penalized rewards: verifier_reward - kl_coef * sample_kl.
     # 5. Normalize rewards into advantages.
     # 6. Return the rollout dict expected by run_experiment.
-    raise NotImplementedError("Exercise 6: implement rollout collection.")
+    prompt_ids = [tokenizer.encode_text(format_prompt(a, b)) for a, b in pairs]
+    completion_ids = []
+    answers = []
+    targets = []
+    for (a, b), prompt in zip(pairs, prompt_ids):
+        completion = generate_completion(
+            model, tokenizer, prompt, config.max_new_tokens, config.temperature, device
+        )
+        completion_ids.append(completion)
+        answers.append(tokenizer.decode_completion(completion))
+        targets.append(a + b)
+
+    was_training = model.training
+    model.eval()
+    reference_model.eval()
+    with torch.no_grad():
+        old_logps, completion_lengths = sequence_logps_for_completions(
+            model, tokenizer, prompt_ids, completion_ids, device
+        )
+        reference_logps, _ = sequence_logps_for_completions(
+            reference_model, tokenizer, prompt_ids, completion_ids, device
+        )
+    if was_training:
+        model.train()
+    verifier_rewards = torch.tensor(
+        [arithmetic_reward(answer, target) for answer, target in zip(answers, targets)],
+        dtype=torch.float32,
+        device=device,
+    )
+    sample_kl = old_logps - reference_logps
+    rewards = verifier_rewards - config.kl_coef * sample_kl
+    reward_std = rewards.std(unbiased=False)
+    advantages = (rewards - rewards.mean()) / (reward_std + 1e-8)
+    return {
+        "prompt_ids": prompt_ids,
+        "completion_ids": completion_ids,
+        "answers": answers,
+        "targets": targets,
+        "completion_lengths": completion_lengths.detach(),
+        "old_logps": old_logps.detach(),
+        "reference_logps": reference_logps.detach(),
+        "verifier_rewards": verifier_rewards,
+        "sample_kl": sample_kl.detach(),
+        "rewards": rewards.detach(),
+        "advantages": advantages.detach(),
+    }
 
 
 def run_experiment(config=None, progress=True):

@@ -12,9 +12,15 @@ def compute_sequence_logps(logits, labels, loss_mask):
     # 3. Gather the log-prob assigned to each label token.
     # 4. Apply loss_mask so prompt/padding tokens do not count.
     # 5. Return summed response log-probs and response token counts.
-    B, T, V = logits.shape
-    assert labels.shape == (B, T)
-    assert loss_mask.shape == (B, T)
+    if logits.ndim != 3:
+        raise ValueError("logits must have shape (B, T, V)")
+    B, T, _ = logits.shape
+    if labels.shape != (B, T) or loss_mask.shape != (B, T):
+        raise ValueError("labels and loss_mask must have shape (B, T)")
+    if labels.dtype not in (torch.int8, torch.int16, torch.int32, torch.int64):
+        raise TypeError("labels must contain integer token ids")
+    if torch.any(loss_mask < 0):
+        raise ValueError("loss_mask must be non-negative")
     log_probs = torch.log_softmax(logits, dim=-1)
     chosen_log_probs = torch.gather(
         log_probs, 
