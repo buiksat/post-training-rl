@@ -24,9 +24,9 @@ You will build the main post-training moving parts:
 ## Roadmap
 
 - [x] Hugging Face model probe
-- [ ] Hugging Face completion log-probs
-- [ ] response sequence log-probs
-- [ ] SFT loss
+- [x] Hugging Face completion log-probs
+- [x] response sequence log-probs
+- [x] SFT loss
 - [ ] autoregressive generation
 - [ ] verifier reward
 - [ ] PPO clipped loss + diagnostics
@@ -77,6 +77,12 @@ post_training_rl/hf_logprobs.py::compute_hf_completion_logps
 This is a critical bridge for frontier-lab-style work. You should be able to
 explain how to compute log-probs for only the completion tokens of a
 prompt/completion pair using a causal LM.
+
+Run:
+
+```bash
+PYTHONPATH=. python -m pytest tests/test_hf_logprobs.py -q
+```
 
 ### Step 1: Response Log-Probs
 
