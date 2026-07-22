@@ -148,11 +148,35 @@ def sft_loss(model, tokenizer, pairs, device):
 def generate_completion(model, tokenizer, prompt_ids, max_new_tokens, temperature, device):
     # Exercise 3:
     # 1. Run the prompt through the model.
-    # 2. Repeatedly choose the next token by greedy decode or temperature sampling.
-    # 3. Feed each sampled token back into the model.
-    # 4. Stop on eos_token_id or max_new_tokens.
-    # 5. Return only completion token ids, not prompt token ids.
-    raise NotImplementedError("Exercise 3: implement autoregressive generation.")
+    completion = []
+    with torch.no_grad():
+        input_ids = torch.tensor(
+            [prompt_ids],
+            dtype=torch.long,
+            device=device,
+        )
+        logits, hidden = model(input_ids)
+        next_logits = logits[0, -1, :]
+        # 2. Repeatedly choose the next token by greedy decode or temperature sampling.
+        for _ in range(max_new_tokens):
+            if temperature == 0.0:
+                next_token = int(torch.argmax(next_logits))
+            else:
+                probs = torch.softmax(next_logits / temperature, dim=-1)
+                next_token = int(torch.multinomial(probs, num_samples=1))
+        # 3. Feed each sampled token back into the model.
+            completion.append(next_token)
+            if next_token == tokenizer.eos_token_id:
+                break 
+        # 4. Stop on eos_token_id or max_new_tokens.
+            step_input = torch.tensor(
+                    [[next_token]],
+                    dtype=torch.long,
+                    device=device
+                ) 
+            logits, hidden = model(step_input, hidden)
+            next_logits = logits[0, -1, :]
+    return completion
 
 
 def arithmetic_reward(answer_text, target):
