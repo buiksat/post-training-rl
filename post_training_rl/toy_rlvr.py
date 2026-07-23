@@ -178,19 +178,33 @@ def generate_completion(model, tokenizer, prompt_ids, max_new_tokens, temperatur
             next_logits = logits[0, -1, :]
     return completion
 
+def is_numeric(answer_text):
+    try:
+        int(answer_text)
+    except ValueError:
+        return False
+    return True
+
+
+def is_correct_answer(answer_text, target):
+    return answer_text == str(target)
 
 def arithmetic_reward(answer_text, target):
     # Exercise 4:
     # Return a scalar reward for the generated answer.
     # Suggested first version:
     # - exact string match with target: 1.0
+    if is_correct_answer(answer_text, target):
+        return 1.0
     # - numeric but wrong: small/partial reward or penalty
+    elif is_numeric(answer_text):
+        return 0.0
     # - non-numeric: negative reward
-    raise NotImplementedError("Exercise 4: implement verifier reward.")
+    else:
+        return - 1.0      
+    
 
 
-def is_correct_answer(answer_text, target):
-    return answer_text == str(target)
 
 
 def _to_float(value):
